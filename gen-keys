@@ -1,0 +1,43 @@
+#!/bin/bash
+
+EXT_PEM="pem"
+EXT_DER="der"
+EXT_CERT="cert"
+
+if [ "$#" -ne 1 ] ; then
+    echo "Generate a number of router keys"
+    echo "Usage: '$0 <number>'"
+    exit 1
+fi
+
+key=1
+
+for (( i=0; i<$1; ))
+do
+    if [[ -e "$key.der" || -e "$key.pem" ]] ; then
+        echo "Keys for $key already exists, skipping..."
+    else
+        echo "Generating $key.der, $key.pem and $key.cert"
+        openssl ecparam -name prime256v1 -genkey -out $key.pem
+        openssl ec -in $key.pem -outform der -out $key.der
+
+        # Create Certificate Request
+        #echo "Create Certificate Request for $key..."
+        openssl req -new -batch -config key.conf -key $key.pem -out $key.csr
+        exit 1
+        sub=$(openssl req -in $key.csr -text | ./get-ski.py)
+        #echo "Subject='$SUBJECT'"
+        openssl req -new -batch -subj /CN=$sub -key $key.pem -out $key.csr
+        #echo "Request created."
+
+        # Create Certificate
+        echo "Create Certificate for $key"
+        openssl x509 -sha256 -extensions bgpsec_router_ext -in $key.csr -outform DER -out $key.cert -req -signkey $key.pem -days 365
+
+        # Remove certificate request
+        rm -f $key.csr
+        
+        i=$(( $i + 1 ))
+    fi
+    key=$(( $key + 1 ))
+done
