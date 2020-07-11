@@ -1,41 +1,41 @@
 #!/bin/bash
 
-EXT_PEM="pem"
-EXT_DER="der"
-EXT_CERT="cert"
-
-if [ "$#" -ne 1 ] ; then
+if [ "$#" -ne 2 ] ; then
     echo "Generate a number of router keys"
-    echo "Usage: '$0 <number>'"
+    echo "Usage: '$0 <number> <output-dir>'"
+    exit 1
+fi
+
+if [ ! -d $2 ]; then
+    echo "Directory $2 does not exist"
     exit 1
 fi
 
 key=1
+outdir=${2%/}
 
 for (( i=0; i<$1; ))
 do
-    if [[ -e "$key.der" || -e "$key.pem" ]] ; then
+    if [[ -e "$outdir/$key.der" || -e "$outdir/$key.pem" ]]
+    then
         echo "Keys for $key already exists, skipping..."
     else
         echo "Generating $key.der, $key.pem and $key.cert"
-        openssl ecparam -name prime256v1 -genkey -out $key.pem
-        openssl ec -in $key.pem -outform der -out $key.der
+        openssl ecparam -name prime256v1 -genkey -out $outdir/$key.pem
+        openssl ec -in $outdir/$key.pem -outform der -out $outdir/$key.der
 
         # Create Certificate Request
-        #echo "Create Certificate Request for $key..."
-        openssl req -new -batch -config key.conf -key $key.pem -out $key.csr
-        exit 1
-        sub=$(openssl req -in $key.csr -text | ./get-ski.py)
-        #echo "Subject='$SUBJECT'"
-        openssl req -new -batch -subj /CN=$sub -key $key.pem -out $key.csr
-        #echo "Request created."
+        openssl req -new -batch -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
+        sub=$(openssl req -in $outdir/$key.csr -text | ./get-ski.py)
+        echo "Subject='$sub'"
+        openssl req -new -batch -subj /CN=$sub -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
 
         # Create Certificate
         echo "Create Certificate for $key"
-        openssl x509 -sha256 -extensions bgpsec_router_ext -in $key.csr -outform DER -out $key.cert -req -signkey $key.pem -days 365
+        openssl x509 -sha256 -extfile key.conf -extensions bgpsec_router_ext -set_serial 20140220001 -in $outdir/$key.csr -outform DER -out $outdir/$key.cert -req -signkey $outdir/$key.pem -days 365
 
         # Remove certificate request
-        rm -f $key.csr
+        rm -f $outdir/$key.csr
         
         i=$(( $i + 1 ))
     fi
