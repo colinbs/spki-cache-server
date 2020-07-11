@@ -63,6 +63,10 @@ To generate 100 router keys in the `keys/` directory, run
 
     ./gen-keys 100 keys/
 
+Show all options for the server with `-h` or `--help`
+
+    ./cache.py --help
+
 Start a server on `0.0.0.0:8383` with existing router keys
 
     ./cache.py 0.0.0.0 8383 --keypath path/to/keys
