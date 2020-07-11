@@ -42,6 +42,16 @@ directory storing the router keys with the `--keypath PATH` option
 
     ./cache.py HOST PORT --keypath PATH
 
+By default, the server will look for `.cert` files. If the router keys have
+a different file extension, specify it using the `--ext EXT` option
+
+    ./cache.py HOST PORT --keypath PATH --ext EXT
+
+**Important**: regardless of the file extension, the router key must still be
+a valid x509 certificate!
+This option is only regarded if in combination with the `--keypath` option.
+Using the `-d` option will ignore the `--ext` option.
+
 To generate dummy router keys by the server, use the `-d AMOUNT` option
 
     ./cache.py HOST PORT -d AMOUNT
@@ -56,6 +66,10 @@ To generate 100 router keys in the `keys/` directory, run
 Start a server on `0.0.0.0:8383` with existing router keys
 
     ./cache.py 0.0.0.0 8383 --keypath path/to/keys
+
+Specify a different file extension for router keys
+
+    ./cache.py 0.0.0.0 8383 --keypath path/to/keys --ext xyz
 
 Start a server on `0.0.0.0:8383` and generate 100 dummy router keys
 
