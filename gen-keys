@@ -43,14 +43,20 @@ else
 fi
 
 key=1
+amount=$1
 outdir=${2%/}
 
-for (( i=0; i<$1; ))
+for (( i=0; i<$amount; ))
 do
-    if [[ -e "$outdir/$key.der" || -e "$outdir/$key.pem" ]]; then
-        msg "Keys for $key already exists, skipping..."
+    if [[ -e "$outdir/$key.der" || -e "$outdir/$key.pem" || -e "$outdir/$key.cert" || -e "$outdir/$key.csr" ]]; then
+        msg "Keys for $key already exist, skipping..."
     else
-        msg "Generating $key.der, $key.pem and $key.cert"
+        if [ $log -eq 1 ]; then
+            msg "Generating $key.der, $key.pem and $key.cert"
+        else
+            echo -ne "Generating key $i/$amount\r"
+        fi
+
         openssl ecparam -name prime256v1 -genkey -out $outdir/$key.pem
         openssl ec -in $outdir/$key.pem -outform der -out $outdir/$key.der &> /dev/null
 
@@ -61,7 +67,7 @@ do
         openssl req -new -batch -subj /CN=$sub -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
 
         # Create Certificate
-        msg "Create Certificate for $key"
+        msg "Create Certificate $key.cert"
         openssl x509 -sha256 -extfile key.conf -extensions bgpsec_router_ext -set_serial 20140220001 -in $outdir/$key.csr -outform DER -out $outdir/$key.cert -req -signkey $outdir/$key.pem &> /dev/null
 
         # Remove certificate request
@@ -72,4 +78,4 @@ do
     key=$(( $key + 1 ))
 done
 
-echo "Generated $1 router key(s) in directory $2"
+echo "Generated $amount router key(s) in directory $2"
