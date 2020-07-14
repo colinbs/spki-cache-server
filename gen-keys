@@ -1,6 +1,19 @@
 #!/bin/bash
-
-log=0
+#
+# Parts of this script are taken from the NIST BGP-SRx software
+# which can be found here
+# https://www.nist.gov/services-resources/software/bgp-secure-routing-extension-bgp-srx-prototype
+#
+# This script here generates an arbitrary amount of router keys.
+# These router keys are x509 certificates generated with openssl.
+# By default, the resulting router keys are named by their index
+# count during generation. I.e. generating five certificats will result
+# in certificates named 1.cert to 5.cert. If a certificate already
+# exists, the index is incremented and generation is retried until
+# the filename is free to take.
+# For certificate generation, the key.conf file is required. Changing
+# its contents is not recommended as it could lead to invalid
+# certificates.
 
 msg() {
     if [ $log -eq 1 ]; then
@@ -19,8 +32,6 @@ if [ ! -d $2 ]; then
     exit 1
 fi
 
-outdir=${2%/}
-
 if [ "$3" == "-v" ]; then
     log=1
 elif [ "$3" == "" ]; then
@@ -32,6 +43,7 @@ else
 fi
 
 key=1
+outdir=${2%/}
 
 for (( i=0; i<$1; ))
 do
