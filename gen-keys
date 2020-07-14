@@ -62,7 +62,7 @@ do
 
         # Create Certificate
         msg "Create Certificate for $key"
-        openssl x509 -sha256 -extfile key.conf -extensions bgpsec_router_ext -set_serial 20140220001 -in $outdir/$key.csr -outform DER -out $outdir/$key.cert -req -signkey $outdir/$key.pem -days 365 &> /dev/null
+        openssl x509 -sha256 -extfile key.conf -extensions bgpsec_router_ext -set_serial 20140220001 -in $outdir/$key.csr -outform DER -out $outdir/$key.cert -req -signkey $outdir/$key.pem &> /dev/null
 
         # Remove certificate request
         rm -f $outdir/$key.csr
