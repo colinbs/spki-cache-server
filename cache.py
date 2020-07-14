@@ -7,6 +7,8 @@ import os
 import sys
 import copy
 
+log_level = 0
+
 key_vault = []
 asn = bytearray(b"\x00\x00\x00\x00")
 
@@ -63,6 +65,7 @@ def gen_dummy_keys(amount):
     global dummy_spki
     global asn
     global dummy_ski
+    global log_level
 
     header = bytearray(router_key_header)
 
@@ -82,7 +85,7 @@ def gen_dummy_keys(amount):
 
         key_vault.append(key)
 
-    print(f"Generated {amount} router keys")
+    if log_level: print(f"Generated {amount} router keys")
 
 def gen_dummy_ski():
     global dummy_ski
@@ -146,33 +149,37 @@ def handle_error_pdu(data):
     print(data[20:err_len])
 
 def send_data(conn, addr, data):
-    if data[1] == 0:
-        print(f"Send Serial Notify to {addr}")
-    elif data[1] == 1:
-        print(f"Send Serial Query to {addr}")
-    elif data[1] == 2:
-        print(f"Send Reset Query to {addr}")
-    elif data[1] == 3:
-        print(f"Send Cache Response to {addr}")
-    elif data[1] == 4:
-        print(f"Send IPv4 Prefix to {addr}")
-    elif data[1] == 6:
-        print(f"Send IPv6 Prefix to {addr}")
-    elif data[1] == 7:
-        print(f"Send End Of Data to {addr}")
-    elif data[1] == 8:
-        print(f"Send Cache Reset to {addr}")
+    global log_level
+
+    if log_level:
+        if data[1] == 0:
+            print(f"Send Serial Notify to {addr}")
+        elif data[1] == 1:
+            print(f"Send Serial Query to {addr}")
+        elif data[1] == 2:
+            print(f"Send Reset Query to {addr}")
+        elif data[1] == 3:
+            print(f"Send Cache Response to {addr}")
+        elif data[1] == 4:
+            print(f"Send IPv4 Prefix to {addr}")
+        elif data[1] == 6:
+            print(f"Send IPv6 Prefix to {addr}")
+        elif data[1] == 7:
+            print(f"Send End Of Data to {addr}")
+        elif data[1] == 8:
+            print(f"Send Cache Reset to {addr}")
 
     conn.sendall(data)
 
 def load_keys(path, ext):
     global key_vault
+    global log_level
 
     for filename in os.listdir(path):
         if ext in filename:
             with open(os.path.join(path, filename), 'rb') as f:
                 read_key(f)
-    print(f"Successfully loaded {len(key_vault)} Router Keys")
+    if log_level: print(f"Successfully loaded {len(key_vault)} Router Keys")
 
 def read_key(f):
     global key_vault
@@ -202,29 +209,33 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Router Key Cache Server")
     parser.add_argument("host", help="hostname or IP address to host from")
     parser.add_argument("port", type=int, help="port to host from")
-    parser.add_argument("--ext", default=".cert", help="router key file extension")
+    parser.add_argument("-e", "--ext", default=".cert", help="router key file extension")
+    parser.add_argument("-v", "--verbose", action="store_true", help="print more verbose debug output")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--keypath", help="path to router keys")
-    group.add_argument("-d", type=int, help="use D amount of invalid dummy router keys")
+    group.add_argument("-k", "--keypath", metavar="PATH", help="path to router keys")
+    group.add_argument("-d", "--dummy", type=int, metavar="N", help="use N amount of invalid dummy router keys")
     args = parser.parse_args()
 
-    if not args.keypath and not args.d:
-        print("must provide one of the arguments:\n  --keypath, -d\n")
+    if not args.keypath and not args.dummy:
+        print("must provide one of the arguments:\n  -k, -d\n")
         print("use -h or --help for usage")
         sys.exit(1)
 
-    if args.d and (args.d <= 0 or args.d > 999):
-        print("argument for -d D must be a value between 1 and 1000")
+    if args.dummy and (args.dummy <= 0 or args.dummy > 999):
+        print("argument for -d, --dummy must be a value between 1 and 1000")
         print("use -h or --help for usage")
         sys.exit(1)
+
+    if args.verbose:
+        log_level = 1
 
     HOST = args.host
     PORT = args.port
 
     if args.keypath:
         load_keys(args.keypath, args.ext)
-    elif args.d:
-        gen_dummy_keys(args.d)
+    elif args.dummy:
+        gen_dummy_keys(args.dummy)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -235,22 +246,22 @@ if __name__ == "__main__":
             s.listen(1)
             conn, addr = s.accept()
             with conn:
-                print(f"Connected by {addr[0]}:{addr[1]}")
+                if log_level: print(f"Connected by {addr[0]}:{addr[1]}")
                 while STATE != States.DONE:
                     try:
                         if STATE == States.RECV:
                             data = conn.recv(1024)
-                            process_data(data, addr[0])
+                            if log_level: process_data(data, addr[0])
                             STATE = States.SEND
                         elif STATE == States.SEND:
                             send_data(conn, addr[0], cache_response)
-                            print(f"Send Router Keys to {addr[0]}...", end=" ")
+                            if log_level: print(f"Send Router Keys to {addr[0]}...", end=" ")
                             for key in key_vault:
                                 send_data(conn, addr[0], key)
                             if args.keypath:
-                                print(f"{len(key_vault)} Router Keys sent")
-                            elif args.d:
-                                print(f"{args.d} Router Keys sent")
+                                if log_level: print(f"{len(key_vault)} Router Keys sent")
+                            elif args.dummy:
+                                if log_level: print(f"{args.dummy} Router Keys sent")
 
                             send_data(conn, addr[0], end_of_data)
                             STATE = States.DONE
@@ -258,5 +269,5 @@ if __name__ == "__main__":
                         STATE = States.DONE
                         break
                 conn.close()
-                print(f"Closed connection to {addr[0]}:{addr[1]}")
+                if log_level: print(f"Closed connection to {addr[0]}:{addr[1]}")
                 STATE = States.RECV

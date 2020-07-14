@@ -1,8 +1,16 @@
 #!/bin/bash
 
-if [ "$#" -ne 2 ] ; then
+log=0
+
+msg() {
+    if [ $log -eq 1 ]; then
+        echo $1
+    fi
+}
+
+if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
     echo "Generate a number of router keys"
-    echo "Usage: '$0 <number> <output-dir>'"
+    echo "Usage: '$0 AMOUNT DEST [-v]'"
     exit 1
 fi
 
@@ -11,28 +19,38 @@ if [ ! -d $2 ]; then
     exit 1
 fi
 
-key=1
 outdir=${2%/}
+
+if [ "$3" == "-v" ]; then
+    log=1
+elif [ "$3" == "" ]; then
+    log=0
+else
+    echo "Invalid option $3"
+    echo "Usage: '$0 AMOUNT DEST [-v]'"
+    exit 1
+fi
+
+key=1
 
 for (( i=0; i<$1; ))
 do
-    if [[ -e "$outdir/$key.der" || -e "$outdir/$key.pem" ]]
-    then
-        echo "Keys for $key already exists, skipping..."
+    if [[ -e "$outdir/$key.der" || -e "$outdir/$key.pem" ]]; then
+        msg "Keys for $key already exists, skipping..."
     else
-        echo "Generating $key.der, $key.pem and $key.cert"
+        msg "Generating $key.der, $key.pem and $key.cert"
         openssl ecparam -name prime256v1 -genkey -out $outdir/$key.pem
-        openssl ec -in $outdir/$key.pem -outform der -out $outdir/$key.der
+        openssl ec -in $outdir/$key.pem -outform der -out $outdir/$key.der &> /dev/null
 
         # Create Certificate Request
         openssl req -new -batch -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
-        sub=$(openssl req -in $outdir/$key.csr -text | ./get-ski.py)
-        echo "Subject='$sub'"
+        sub=$(openssl req -in $outdir/$key.csr -text | lib/get-ski.py)
+        msg "Subject='$sub'"
         openssl req -new -batch -subj /CN=$sub -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
 
         # Create Certificate
-        echo "Create Certificate for $key"
-        openssl x509 -sha256 -extfile key.conf -extensions bgpsec_router_ext -set_serial 20140220001 -in $outdir/$key.csr -outform DER -out $outdir/$key.cert -req -signkey $outdir/$key.pem -days 365
+        msg "Create Certificate for $key"
+        openssl x509 -sha256 -extfile key.conf -extensions bgpsec_router_ext -set_serial 20140220001 -in $outdir/$key.csr -outform DER -out $outdir/$key.cert -req -signkey $outdir/$key.pem -days 365 &> /dev/null
 
         # Remove certificate request
         rm -f $outdir/$key.csr
@@ -41,3 +59,5 @@ do
     fi
     key=$(( $key + 1 ))
 done
+
+echo "Generated $1 router key(s) in directory $2"
