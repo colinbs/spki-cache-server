@@ -62,7 +62,8 @@ do
 
         # Create Certificate Request
         openssl req -new -batch -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
-        sub=$(openssl req -in $outdir/$key.csr -text | lib/get-ski.py)
+        #sub=$(openssl req -in $outdir/$key.csr -text | lib/get-ski.py)
+        sub=$(lib/get-ski.py $outdir/$key.csr)
         msg "Subject='$sub'"
         openssl req -new -batch -subj /CN=$sub -config key.conf -key $outdir/$key.pem -out $outdir/$key.csr
 

@@ -1,15 +1,17 @@
 #!/usr/bin/python
 
 import sys
+from shell import shell
 
-raw_key = [l for l in sys.stdin]
+path = sys.argv[1]
+raw_key = shell(f"openssl req -in {path} -text")
 
 i = 0
 
-for l in raw_key:
+for l in raw_key.output():
     i += 1
     if "Subject Key Identifier" in l:
         break
 
-ski = raw_key[i].replace(":", "").upper().strip()
+ski = raw_key.output()[i].replace(":", "").upper().strip()
 print(ski)
