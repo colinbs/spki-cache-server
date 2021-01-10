@@ -73,6 +73,10 @@ do
 
         # Remove certificate request
         rm -f $outdir/$key.csr
+
+        mv $outdir/$key.cert $outdir/$sub.cert
+        mv $outdir/$key.der $outdir/$sub.der
+        mv $outdir/$key.pem $outdir/$sub.pem
         
         i=$(( $i + 1 ))
     fi
