@@ -4,9 +4,9 @@ RUN pacman -Sy archlinux-keyring --noconfirm \
     && pacman -Syyu --noconfirm \
     && pacman -S --noconfirm --needed git python
 
-RUN git clone https://git.csames.de/colin/rpki-cache.git \
+RUN git clone https://git.csames.de/colin/spki-cache-server.git \
     && mkdir /keys \
-    && cd rpki-cache \
+    && cd spki-cache-server \
     && ./gen-keys 100 /keys
 
-CMD ["/rpki-cache/cache.py", "0.0.0.0", "8383", "-k", "/keys", "-v"]
+CMD ["/spki-cache-server/cache.py", "0.0.0.0", "8383", "-k", "/keys", "-v"]
