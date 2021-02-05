@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 import copy
+import random
 
 log_level = 0
 
@@ -119,13 +120,15 @@ def gen_dummy_asn():
     global asn
 
     pos = ASN_LEN - 1
+    for x in range(0, 4):
+        asn[x] = random.randint(0, 255);
     
-    while True:
-        if asn[pos] >= 255:
-            pos -= 1
-            continue
-        asn[pos] += 1
-        break
+    # while True:
+        # if asn[pos] >= 255:
+            # pos -= 1
+            # continue
+        # asn[pos] += 1
+        # break
 
 def process_data(data, addr):
     r_bytes = bytearray(data)
