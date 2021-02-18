@@ -7,6 +7,7 @@ import os
 import sys
 import copy
 import random
+from math import floor
 
 log_level = 0
 
@@ -177,12 +178,21 @@ def send_data(conn, addr, data):
 def load_keys(path, ext):
     global key_vault
     global log_level
+    rot = 0
+    i = 0
+    spin = ["-", "\\", "|", "/"]
 
     for filename in os.listdir(path):
         if ext in filename:
             with open(os.path.join(path, filename), 'rb') as f:
                 read_key(f)
-    if log_level: print(f"Successfully loaded {len(key_vault)} Router Keys")
+        if log_level: 
+            rot = floor((i % 399) / 100)
+            print(f"Loading keys...{spin[rot]}", end="\r")
+            i += .01
+    if log_level:
+        print(f"Loading keys... done")
+        print(f"Successfully loaded {len(key_vault)} Router Keys")
 
 def read_key(f):
     global key_vault
