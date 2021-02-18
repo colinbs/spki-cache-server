@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [[ "$#" -ne 1 ]]; then
+    echo "Sort keys in sub directories"
+    echo "Usage: '$0 TARGET_DIR'"
+    exit 1
+fi
+
+if [ ! -d $1 ]; then
+    echo "Directory $1 does not exist"
+    exit 1
+fi
+
+cd $1
+
+mkdir {0..9} {A..F}
+
+for d in {0..9}
+do
+    mv $d*.der $d*.cert $d*.pem $d/ 2> /dev/null
+done
+
+for d in {A..F}
+do
+    mv $d*.der $d*.cert $d*.pem $d/ 2> /dev/null
+done
