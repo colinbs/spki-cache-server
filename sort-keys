@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [[ "$#" -ne 1 ]]; then
+if [[ "$#" -ne 2 ]]; then
     echo "Sort keys in sub directories"
-    echo "Usage: '$0 TARGET_DIR'"
+    echo "Usage: '$0 TARGET_DIR FILE_EXT'"
     exit 1
 fi
 
@@ -12,15 +12,16 @@ if [ ! -d $1 ]; then
 fi
 
 cd $1
+ext=$2
 
-mkdir {0..9} {A..F}
+mkdir {0..9} {A..F} 2> /dev/null
 
 for d in {0..9}
 do
-    mv $d*.der $d*.cert $d*.pem $d/ 2> /dev/null
+    mv $d*.$ext $d/ 2> /dev/null
 done
 
 for d in {A..F}
 do
-    mv $d*.der $d*.cert $d*.pem $d/ 2> /dev/null
+    mv $d*.$ext $d/ 2> /dev/null
 done
