@@ -255,6 +255,7 @@ if __name__ == "__main__":
     STATE = States.RECV
     with sock as s:
         s.bind((HOST, PORT))
+        if log_level: print(f"Started cache on {HOST}:{PORT}")
         while True:
             s.listen(1)
             conn, addr = s.accept()
